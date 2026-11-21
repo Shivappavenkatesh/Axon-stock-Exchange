@@ -22,3 +22,8 @@ axon-eic-temp.pub
 logs/*
 !logs/.gitkeep
 backtest_results.json
+
+# Axon runtime data
+/data/
+/reports/
+*.sqlite3*

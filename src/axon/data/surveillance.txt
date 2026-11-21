@@ -1,0 +1,3 @@
+# Stocks under NSE/BSE surveillance (ASM / GSM). One symbol per line, e.g. XYZ-EQ.
+# These are excluded from every part. NSE publishes the lists daily on its website;
+# update this file (or automate the download on the server) before market open.

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Axon</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; background: #f4f6f8; color: #222; }
+  header { background: #1f4e79; color: #fff; padding: .8rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+  main { padding: 1.5rem; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  section { background: #fff; border-radius: 8px; padding: 1rem 1.2rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  h2 { font-size: 1rem; margin: 0 0 .7rem; }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  td, th { text-align: left; padding: .3rem .4rem; border-bottom: 1px solid #eee; }
+  .live { color: #b00020; font-weight: 700; }
+  .warn { color: #b00020; font-weight: 700; }
+  button { padding: .35rem .7rem; border-radius: 4px; border: 1px solid #1f4e79; background: #fff; color: #1f4e79; cursor: pointer; }
+  select { padding: .3rem; }
+  .muted { color: #666; font-size: .8rem; }
+  form.inline { display: inline; }
+  header button { border-color: #fff; color: #fff; background: transparent; }
+</style>
+</head>
+<body>
+<header>
+  <strong>Axon</strong>
+  <span id="clock" class="muted" style="color:#dde"></span>
+  <form class="inline" method="post" action="/logout"><button>Sign out</button></form>
+</header>
+<main>
+  <section>
+    <h2>Modes</h2>
+    <table id="modes"></table>
+    <p class="muted">Going LIVE asks you to type a confirmation, and only works after the part passes its paper test.</p>
+  </section>
+  <section>
+    <h2>Money and brakes</h2>
+    <table id="books"></table>
+    <p>Kill switch: <strong id="kill"></strong> <button id="killbtn">Toggle</button></p>
+  </section>
+  <section>
+    <h2>Pass tests</h2>
+    <table id="tests"></table>
+  </section>
+  <section style="grid-column: 1 / -1">
+    <h2>Open positions</h2>
+    <table id="positions"></table>
+  </section>
+  <section style="grid-column: 1 / -1">
+    <h2>Recent alerts</h2>
+    <table id="alerts"></table>
+  </section>
+</main>
+<script>
+const MODES = ["off", "test", "paper", "live"];
+async function api(path, body) {
+  const opts = body ? {method: "POST", headers: {"Content-Type": "application/json", "X-Axon-Request": "1"}, body: JSON.stringify(body)} : {};
+  const r = await fetch(path, opts);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || r.statusText);
+  return data;
+}
+function esc(v) { return String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+async function setMode(part, mode) {
+  let confirm = "";
+  if (mode === "live") {
+    confirm = prompt(`Real money. Type: LIVE ${part}`) || "";
+    if (!confirm) return refresh();
+  }
+  try { await api("/api/mode", {part, mode, confirm}); } catch (e) { alert(e.message); }
+  refresh();
+}
+async function refresh() {
+  const s = await api("/api/status");
+  document.getElementById("clock").textContent = new Date(s.now).toLocaleString();
+  document.getElementById("modes").innerHTML = "<tr><th>Part</th><th>Mode</th></tr>" + Object.entries(s.modes).map(([p, m]) =>
+    `<tr><td>${esc(p)}</td><td><select onchange="setMode('${esc(p)}', this.value)">${MODES.map(x => `<option ${x===m?"selected":""}>${x}</option>`).join("")}</select> ${m==="live"?'<span class="live">LIVE</span>':""}</td></tr>`).join("");
+  document.getElementById("books").innerHTML = "<tr><th>Book</th><th>Value</th><th>Per unit</th><th>Brakes</th></tr>" + Object.entries(s.books).map(([b, v]) =>
+    `<tr><td>${esc(b)}</td><td>${v.value.toLocaleString()}</td><td>${v.value_per_unit}</td><td class="${v.locked?"warn":""}">${esc(v.brakes)}</td></tr>`).join("");
+  document.getElementById("kill").textContent = s.kill_switch ? "ON" : "off";
+  document.getElementById("kill").className = s.kill_switch ? "warn" : "";
+  document.getElementById("tests").innerHTML = "<tr><th>Part</th><th>Trades</th><th>Avg net</th><th>Result</th></tr>" + Object.values(s.pass_tests).map(t =>
+    `<tr><td>${esc(t.part)}</td><td>${t.trades}/${t.required}</td><td>${t.avg_net.toFixed(2)}</td><td>${esc(t.reason)}</td></tr>`).join("");
+  const pos = await api("/api/positions");
+  document.getElementById("positions").innerHTML = "<tr><th>Book</th><th>Part</th><th>Symbol</th><th>Qty</th><th>Entry</th><th>Last</th><th>Stop</th><th>Target</th></tr>" +
+    (pos.map(p => `<tr><td>${esc(p.book)}</td><td>${esc(p.part)}</td><td>${esc(p.symbol)}</td><td>${p.quantity}</td><td>${p.entry_price}</td><td>${p.last_price}</td><td>${p.stop ?? ""}</td><td>${p.target ?? ""}</td></tr>`).join("") || "<tr><td colspan=8 class=muted>None</td></tr>");
+  const al = await api("/api/alerts");
+  document.getElementById("alerts").innerHTML = al.map(a => `<tr><td class="muted">${esc(a.ts.slice(0,16).replace("T"," "))}</td><td>${esc(a.message)}</td></tr>`).join("") || "<tr><td class=muted>None</td></tr>";
+}
+document.getElementById("killbtn").onclick = async () => {
+  const on = document.getElementById("kill").textContent !== "ON";
+  if (!confirm(on ? "Turn the kill switch ON (stop all new entries)?" : "Turn the kill switch OFF?")) return;
+  await api("/api/kill-switch", {active: on});
+  refresh();
+};
+refresh();
+setInterval(refresh, 15000);
+</script>
+</body>
+</html>

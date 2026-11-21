@@ -19,3 +19,5 @@ logs/*
 .env.*
 !.env.example
 .git/
+*.sqlite3*
+data/
