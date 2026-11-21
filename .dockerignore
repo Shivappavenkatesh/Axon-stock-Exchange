@@ -1,0 +1,21 @@
+# Dockerfile
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.venv/
+venv/
+.env
+logs/*
+!logs/.gitkeep
+*.pem
+*.key
+*.db
+*.sqlite
+*.log
+.env.*
+!.env.example
+.git/

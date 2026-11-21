@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axon Trading - Web Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>📈 Axon Trading</h1>
+                </div>
+                <div class="header-info">
+                    <div id="market-status" class="market-status">
+                        <span id="status-indicator" class="indicator"></span>
+                        <span id="status-text">Loading...</span>
+                    </div>
+                    <div id="global-state-banner" class="global-state-banner">
+                        <span>Mode: <strong id="global-mode-text">MOCK</strong></span>
+                        <span>|</span>
+                        <span>Kill Switch: <strong id="global-kill-text">OFF</strong></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <!-- Navigation Tabs -->
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-tab="trading">Trading Terminal</button>
+                <button class="nav-tab" data-tab="orders">Orders</button>
+                <button class="nav-tab" data-tab="scheduler-orders">Scheduler Orders</button>
+                <button class="nav-tab" data-tab="positions">Positions</button>
+                <button class="nav-tab" data-tab="portfolio">Portfolio</button>
+            </nav>
+
+            <!-- Trading Terminal Tab -->
+            <section id="tab-trading" class="tab-content active">
+                <div class="trading-panel">
+                    <h2>Place Trade</h2>
+                    <form id="trade-form" class="trade-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="symbol">Symbol</label>
+                                <input type="text" id="symbol" name="symbol" placeholder="e.g., RELIANCE" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="quantity">Quantity</label>
+                                <input type="number" id="quantity" name="quantity" placeholder="100" min="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Side</label>
+                                <div class="radio-group">
+                                    <label class="radio-label">
+                                        <input type="radio" name="side" value="BUY" checked>
+                                        <span class="buy-badge">BUY</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="side" value="SELL">
+                                        <span class="sell-badge">SELL</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="order-type">Order Type</label>
+                                <select id="order-type" name="order_type">
+                                    <option value="MARKET">Market</option>
+                                    <option value="LIMIT">Limit</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" id="price-group">
+                                <label for="price">Price (optional)</label>
+                                <input type="number" id="price" name="price" placeholder="0.00" step="0.01">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Trade Mode</label>
+                                <div class="radio-group">
+                                    <label class="radio-label">
+                                        <input type="radio" name="trade_mode" value="mock" checked>
+                                        <span class="mock-badge">Mock (Paper)</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="trade_mode" value="live">
+                                        <span class="live-badge">Live</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-submit">Place Trade</button>
+                    </form>
+
+                    <div id="trade-status" class="trade-status"></div>
+                </div>
+
+                <!-- Live Market Feed Panel -->
+                <div class="market-feed-panel">
+                    <h3>Live Market Feed</h3>
+                    <table class="market-feed-table">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Last Traded Price</th>
+                            </tr>
+                        </thead>
+                        <tbody id="market-feed-body">
+                            <tr class="empty-state">
+                                <td colspan="2">Waiting for live ticks...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="stats-panel">
+                    <h3>Quick Stats</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-label">Total Trades</span>
+                            <span class="stat-value" id="stat-total">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Filled</span>
+                            <span class="stat-value" id="stat-filled">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Open Positions</span>
+                            <span class="stat-value" id="stat-positions">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Daily P&L</span>
+                            <span class="stat-value" id="stat-pnl">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Orders Tab -->
+            <section id="tab-orders" class="tab-content">
+                <div class="orders-panel">
+                    <h2>Order History</h2>
+                    <div class="filter-group">
+                        <input type="text" id="filter-symbol" placeholder="Filter by symbol..." class="filter-input">
+                        <select id="filter-status" class="filter-input">
+                            <option value="">All Statuses</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="FILLED">Filled</option>
+                            <option value="CANCELLED">Cancelled</option>
+                            <option value="REJECTED">Rejected</option>
+                            <option value="ERROR">Error</option>
+                        </select>
+                    </div>
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Symbol</th>
+                                <th>Side</th>
+                                <th>Qty</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Mode</th>
+                                <th>Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-table-body">
+                            <tr class="empty-state">
+                                <td colspan="9">No orders yet. Place a trade to get started.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Scheduler Orders Tab -->
+            <section id="tab-scheduler-orders" class="tab-content">
+                <div class="orders-panel">
+                    <h2>Scheduler Order History</h2>
+                    <p class="subtitle">Orders generated automatically by the trading scheduler.</p>
+                    <div class="filter-group">
+                        <input type="text" id="scheduler-filter-symbol" placeholder="Filter by symbol..." class="filter-input">
+                        <select id="scheduler-filter-status" class="filter-input">
+                            <option value="">All Statuses</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="FILLED">Filled</option>
+                            <option value="CANCELLED">Cancelled</option>
+                            <option value="REJECTED">Rejected</option>
+                            <option value="ERROR">Error</option>
+                        </select>
+                    </div>
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Symbol</th>
+                                <th>Side</th>
+                                <th>Qty</th>
+                                <th>Status</th>
+                                <th>Mode</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduler-orders-table-body">
+                            <tr class="empty-state">
+                                <td colspan="7">No scheduler orders yet. Scheduler will populate this list when trades are triggered.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Positions Tab -->
+            <section id="tab-positions" class="tab-content">
+                <div class="positions-panel">
+                    <h2>Open Positions</h2>
+                    <table class="positions-table">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Quantity</th>
+                                <th>Avg Price</th>
+                                <th>Current Price</th>
+                                <th>P&L</th>
+                                <th>P&L %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positions-table-body">
+                            <tr class="empty-state">
+                                <td colspan="6">No open positions.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Portfolio Tab -->
+            <section id="tab-portfolio" class="tab-content">
+                <div class="portfolio-panel">
+                    <h2>Portfolio Summary</h2>
+                    <div class="portfolio-grid">
+                        <div class="portfolio-card large">
+                            <div class="card-label">Total Capital</div>
+                            <div class="card-value" id="portfolio-total">$100,000.00</div>
+                        </div>
+                        <div class="portfolio-card">
+                            <div class="card-label">Current Value</div>
+                            <div class="card-value" id="portfolio-current">$100,000.00</div>
+                        </div>
+                        <div class="portfolio-card">
+                            <div class="card-label">Cash Available</div>
+                            <div class="card-value" id="portfolio-cash">$100,000.00</div>
+                        </div>
+                        <div class="portfolio-card">
+                            <div class="card-label">Daily P&L</div>
+                            <div class="card-value" id="portfolio-daily-pnl">$0.00</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Axon Trading v1.0 | Real-time Trading & Order Management</p>
+        </footer>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div id="order-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <h2>Order Details</h2>
+            <div id="modal-body"></div>
+            <button class="btn-close">Close</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/client.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: axon-aone
+  namespace: axon-aone
+  labels:
+    app: axon-aone
+    version: v1
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: axon-aone
+  template:
+    metadata:
+      labels:
+        app: axon-aone
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: axon-aone
+      containers:
+        - name: axon-aone
+          image: axonaoneacr.azurecr.io/axon-aone:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: ANGEL_ONE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: angel-one-credentials
+                  key: api-key
+            - name: ANGEL_ONE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: angel-one-credentials
+                  key: client-id
+            - name: ANGEL_ONE_PIN
+              valueFrom:
+                secretKeyRef:
+                  name: angel-one-credentials
+                  key: pin
+            - name: ANGEL_ONE_TOTP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: angel-one-credentials
+                  key: totp-secret
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          envFrom:
+            - configMapRef:
+                name: axon-aone-config
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          livenessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - "import sys; sys.exit(0)"
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - "import sys; sys.exit(0)"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 2
+          volumeMounts:
+            - name: logs
+              mountPath: /app/logs
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+      volumes:
+        - name: logs
+          emptyDir: {}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

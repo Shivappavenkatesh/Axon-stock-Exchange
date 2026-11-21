@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: axon-aone-config
+  namespace: axon-aone
+  labels:
+    app: axon-aone
+data:
+  PYTHONUNBUFFERED: "1"
+  TZ: "Asia/Kolkata"
+  MOCK_MODE: "false"
+  LOG_LEVEL: "INFO"
+  # Capital-engine database. Default is SQLite inside the pod (lost on restart);
+  # point this at PostgreSQL for durable state, e.g.
+  # postgresql+psycopg2://axon:<password>@<host>:5432/axon
+  AXON_DATABASE_URL: "sqlite:////app/logs/axon.db"

@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: axon-aone-pdb
+  namespace: axon-aone
+  labels:
+    app: axon-aone
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: axon-aone

@@ -1,0 +1,101 @@
+{
+  "document": "Strategy Log",
+  "created": "2026-03-02",
+  "strategies": [
+    {
+      "id": 1,
+      "name": "Value-Oriented (Warren)",
+      "description": "Fundamental, margin-of-safety based ideas: select high-quality companies, size conservatively, hold for multi-week/months, focus on downside protection.",
+      "implemented_features": [
+        "features/screener.py (simple scoring, top-N)",
+        "features/data_ingest.py (CSV + yfinance helpers)",
+        "features/trade.py (risk-based sizing)",
+        "services/vault_manager.py (vaulting profits)"
+      ],
+      "tests": ["tests/test_persistence_and_vault.py"],
+      "limitations": "Fundamental scoring is a scaffold; ticker mapping for NSE needs refinement.",
+      "next_steps": "Enrich screener with financial ratios, earnings, paid fundamentals API."
+    },
+    {
+      "id": 2,
+      "name": "Growth/Scale-Oriented (Elon)",
+      "description": "Automation-first, trend capture, scaling position size with confidence, monitoring and telemetry.",
+      "implemented_features": [
+        "backtester.py and scripts/run_backtest.py",
+        "execution instrumentation & Prometheus metrics (execution/broker.py)",
+        "web_server.py + dashboard template",
+        "services/monitor.py and telegram_notify.py"
+      ],
+      "tests": ["tests/test_accounting.py"],
+      "limitations": "Observability stack not deployed; real-time scaling guardrails needed.",
+      "next_steps": "Add tuned scaling policies and Grafana dashboards."
+    },
+    {
+      "id": 3,
+      "name": "Hybrid / Combined",
+      "description": "Combine fundamental screening with automated execution and risk controls.",
+      "implemented_features": [
+        "screener.py + trade.py integration",
+        "risk % sizing and vaulting",
+        "backtester for validating combined approach"
+      ],
+      "tests": [],
+      "limitations": "Combined backtest scenarios and parameter sweeps to be implemented.",
+      "next_steps": "Add grid search harness and combined backtests."
+    },
+    {
+      "id": 4,
+      "name": "Execution & Risk Controls",
+      "description": "ATR/static stops, realistic fill modeling, metrics and durable persistence.",
+      "implemented_features": ["ATR stops, slippage, commission in backtester","Prometheus metrics","SQLite state_store"],
+      "tests": ["tests/test_accounting.py","tests/test_persistence_and_vault.py"],
+      "limitations": "Partial fills and richer execution QA not yet modeled.",
+      "next_steps": "Record raw fills, reconciliation, simulate partial fills."
+    },
+    {
+      "id": 5,
+      "name": "Screening & Data",
+      "description": "Broker LTP/candles, yfinance, Alpha Vantage, CSV historicals.",
+      "implemented_features": ["features/data_ingest.py","features/screener.py"],
+      "limitations": "Ticker/token mapping for NSE requires domain mapping.",
+      "next_steps": "Resolve symbol/token mapping and add paid data sources."
+    },
+    {
+      "id": 6,
+      "name": "Profit Vaulting & Automation",
+      "description": "Sweep realized profits into a vault and optionally auto-release on rules/schedule.",
+      "implemented_features": ["features/trade.py (vault_profits)","services/vault_manager.py","services/state_store.py"],
+      "tests": ["tests/test_persistence_and_vault.py"],
+      "next_steps": "Tune release policy and add UI controls."
+    },
+    {
+      "id": 7,
+      "name": "Monitoring, Alerts & Notifications",
+      "description": "Prometheus metrics, /metrics endpoint, monitoring routines and Telegram alerts.",
+      "implemented_features": ["execution/broker.py instrumentation","web_server /metrics","services/monitor.py","services/telegram_notify.py"],
+      "limitations": "Alert rules, Grafana dashboards, and escalation not configured.",
+      "next_steps": "Deploy Prometheus + Grafana and configure alerts."
+    },
+    {
+      "id": 8,
+      "name": "Backtesting & Validation",
+      "description": "Deterministic replay backtester with ATR stops, slippage, commission, next-open fills.",
+      "implemented_features": ["src/axon_aone/backtester.py","scripts/run_backtest.py"],
+      "next_steps": "Add parameter sweeps and more realistic slippage models."
+    },
+    {
+      "id": 9,
+      "name": "Operational / Deployment",
+      "description": "Docker, Kubernetes manifests and secrets considerations.",
+      "implemented_features": ["Dockerfile","docker-compose.yml","k8s/ manifests"],
+      "next_steps": "Provide bootstrap scripts and containerized observability stack."
+    },
+    {
+      "id": 10,
+      "name": "Tests & CI",
+      "description": "Unit tests added, test fixes applied, warnings resolved.",
+      "implemented_features": ["tests/test_accounting.py","tests/test_persistence_and_vault.py","test_angel_connection.py (pytest-friendly)"],
+      "next_steps": "Add CI workflows and coverage thresholds."
+    }
+  ]
+}

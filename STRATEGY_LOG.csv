@@ -1,0 +1,11 @@
+id,name,description,implemented_files,tests,limitations,next_steps
+1,"Value-Oriented (Warren)","Fundamental, margin-of-safety based ideas","features/screener.py; features/data_ingest.py; features/trade.py; services/vault_manager.py","tests/test_persistence_and_vault.py","Scoring scaffold; NSE ticker mapping needed","Enrich screener with financial ratios; integrate paid fundamentals"
+2,"Growth/Scale-Oriented (Elon)","Automation-first trend capture","backtester.py; execution/broker.py; web_server.py; services/monitor.py","tests/test_accounting.py","Observability stack not deployed","Add scaling policies and Grafana dashboards"
+3,"Hybrid / Combined","Combine fundamental screening with automated execution","screener.py + trade.py integration; backtester","","Combined backtests missing","Add grid search and combined backtests"
+4,"Execution & Risk Controls","Stops, fill modeling, metrics","backtester.py; execution/broker.py; services/state_store.py","tests/test_accounting.py; tests/test_persistence_and_vault.py","Partial fills not modeled","Record raw fills; simulate partial fills"
+5,"Screening & Data","Broker, yfinance, Alpha Vantage, CSV","features/data_ingest.py; features/screener.py","","Token mapping required for NSE","Resolve symbol mapping; add paid sources"
+6,"Profit Vaulting & Automation","Sweep profits to vault and auto-release","features/trade.py; services/vault_manager.py; services/state_store.py","tests/test_persistence_and_vault.py","Release policy tuning needed","Tune release policy; add UI controls"
+7,"Monitoring, Alerts & Notifications","Prometheus metrics, Telegram alerts","execution/broker.py; web_server.py; services/monitor.py; services/telegram_notify.py","","Alert rules not configured","Deploy Prometheus+Grafana; configure alert rules"
+8,"Backtesting & Validation","Deterministic replay backtester","src/axon_aone/backtester.py; scripts/run_backtest.py","","Needs parameter sweeps","Add parameter sweeps and realistic slippage models"
+9,"Operational / Deployment","Docker, K8s, secrets","Dockerfile; docker-compose.yml; k8s/","","Persistence and secrets handling","Add bootstrap scripts; containerized observability"
+10,"Tests & CI","Unit tests and CI suggestions","tests/test_accounting.py; tests/test_persistence_and_vault.py; test_angel_connection.py","","CI workflows missing","Add CI workflows and coverage thresholds"

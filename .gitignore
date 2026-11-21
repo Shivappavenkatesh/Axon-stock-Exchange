@@ -1,0 +1,24 @@
+# Python
+.venv/
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+
+# Secrets — never commit real credentials
+.env
+.env.azure
+.env.local
+*.pem
+*.key
+axon-eic-temp
+axon-eic-temp.pub
+
+# Local runtime artifacts
+*.db
+*.sqlite
+*.log
+logs/*
+!logs/.gitkeep
+backtest_results.json

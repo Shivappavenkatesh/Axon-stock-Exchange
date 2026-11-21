@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "projectName": {
+      "value": "axon-aone"
+    },
+    "location": {
+    "value": "centralindia"
+  },
+    "containerImage": {
+      "value": "axonaoneacr.azurecr.io/axon-aone:latest"
+    },
+    "registryUsername": {
+      "value": ""
+    },
+    "registryPassword": {
+      "value": ""
+    },
+    "angelOneApiKey": {
+      "value": ""
+    },
+    "angelOneClientId": {
+      "value": ""
+    },
+    "angelOnePin": {
+      "value": ""
+    },
+    "angelOneTotpSecret": {
+      "value": ""
+    },
+    "mockMode": {
+      "value": "false"
+    },
+    "containerCpu": {
+      "value": 1
+    },
+    "containerMemory": {
+      "value": "2"
+    },
+    "restartPolicy": {
+      "value": "Always"
+    }
+  }
+}

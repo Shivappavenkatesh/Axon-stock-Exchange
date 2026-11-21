@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: axon-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: axon
+      POSTGRES_USER: axon
+      POSTGRES_PASSWORD: axon_password
+    volumes:
+      - axon-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - axon-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U axon -d axon"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  scheduler:
+    build: .
+    container_name: axon-scheduler
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - AXON_DATABASE_URL=postgresql+psycopg2://axon:axon_password@postgres:5432/axon
+      - ANGEL_ONE_API_KEY=${ANGEL_ONE_API_KEY:-}
+      - ANGEL_ONE_CLIENT_ID=${ANGEL_ONE_CLIENT_ID:-}
+      - ANGEL_ONE_PIN=${ANGEL_ONE_PIN:-}
+      - ANGEL_ONE_TOTP_SECRET=${ANGEL_ONE_TOTP_SECRET:-}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - axon-network
+    command: ["python", "run_trader.py", "--schedule"]
+
+  web:
+    build: .
+    container_name: axon-web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - AXON_DATABASE_URL=postgresql+psycopg2://axon:axon_password@postgres:5432/axon
+      - ANGEL_ONE_API_KEY=${ANGEL_ONE_API_KEY:-}
+      - ANGEL_ONE_CLIENT_ID=${ANGEL_ONE_CLIENT_ID:-}
+      - ANGEL_ONE_PIN=${ANGEL_ONE_PIN:-}
+      - ANGEL_ONE_TOTP_SECRET=${ANGEL_ONE_TOTP_SECRET:-}
+      - WEB_USERNAME=${WEB_USERNAME:-admin}
+      - WEB_PASSWORD=${WEB_PASSWORD:-changeme}
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - axon-network
+    command: ["python", "run_web.py", "--host", "0.0.0.0", "--port", "5000"]
+
+  dashboard:
+    build: .
+    container_name: axon-dashboard
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - AXON_DATABASE_URL=postgresql+psycopg2://axon:axon_password@postgres:5432/axon
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - axon-network
+    command: ["streamlit", "run", "dashboard/app.py", "--server.address", "0.0.0.0", "--server.port", "8501", "--server.headless", "true"]
+
+volumes:
+  axon-postgres-data:
+    driver: local
+
+networks:
+  axon-network:
+    driver: bridge
