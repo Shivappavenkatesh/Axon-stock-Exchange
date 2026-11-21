@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Axon — sign in</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f4f6f8; display: flex; min-height: 100vh; align-items: center; justify-content: center; margin: 0; }
+  form { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.1); width: 300px; }
+  h1 { font-size: 1.3rem; margin: 0 0 1rem; }
+  label { display: block; font-size: .85rem; margin-top: .8rem; }
+  input { width: 100%; padding: .5rem; margin-top: .25rem; box-sizing: border-box; }
+  button { margin-top: 1.2rem; width: 100%; padding: .6rem; background: #1f4e79; color: #fff; border: 0; border-radius: 4px; }
+  .error { color: #b00020; font-size: .85rem; margin-top: .8rem; }
+</style>
+</head>
+<body>
+<form method="post" action="/login">
+  <h1>Axon</h1>
+  <label>Username <input name="username" autocomplete="username" required></label>
+  <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+  <button type="submit">Sign in</button>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+</form>
+</body>
+</html>

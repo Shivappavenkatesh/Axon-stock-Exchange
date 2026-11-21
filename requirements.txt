@@ -1,40 +1,13 @@
-numpy
-pandas
-matplotlib
-scikit-learn
-requests
-datetime
-uuid
-apscheduler
-pytz
-smartapi-python
+# Trading system (src/axon)
+Flask>=2.3,<4
+requests>=2.31
+smartapi-python>=1.4.0
 pyotp>=2.9.0
-logzero
-websocket-client
+logzero>=1.7          # required by smartapi-python
+websocket-client>=1.6 # required by smartapi-python
 
-# Persistence / Database
-SQLAlchemy>=2.0.0
-psycopg2-binary>=2.9.0
-
-# Dashboard
-streamlit>=1.32.0
-
-# Web Framework & Real-time Support
-Flask>=2.3.0
-Flask-SocketIO>=5.3.0
-python-socketio>=5.9.0
-python-engineio>=4.7.0
-eventlet>=0.33.0
-
-# Testing
-pytest>=7.0.0
-pytest-cov>=3.0.0
-
-# Telegram notifications
-python-telegram-bot>=20.0
-
-# Monitoring (Prometheus /metrics endpoint, scraped by k8s)
-prometheus-client>=0.16.0
-
-# Fundamentals screener data (features/data_ingest.py)
+# Research tools (research/)
 yfinance>=0.2.0
+
+# Tests
+pytest>=7.0

@@ -1,27 +1,21 @@
-# Axon Capital Engine - Scheduler Container
-# Builds a lightweight image that runs the trading scheduler
-
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app/src \
     TZ=Asia/Kolkata
 
-# Set workdir
 WORKDIR /app
-
-# Install system deps (for some Python packages like psycopg2-binary)
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
-COPY requirements.txt ./
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project code (.dockerignore keeps .env, keys, logs and local DBs out)
-COPY . .
-RUN mkdir -p /app/logs
+# .dockerignore keeps .env, keys, databases and logs out of the image
+COPY src ./src
+RUN useradd --create-home axon && mkdir -p /app/data /app/reports && chown -R axon /app
+USER axon
 
-# Default command: run the scheduler in mock/live mode as configured
-CMD ["python", "run_trader.py", "--schedule"]
+# Finding 14: unhealthy when the trading loop stops
+HEALTHCHECK --interval=2m --timeout=20s --start-period=2m --retries=2 \
+    CMD python -m axon health || exit 1
+
+CMD ["python", "-m", "axon", "run"]

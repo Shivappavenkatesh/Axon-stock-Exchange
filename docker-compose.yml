@@ -1,92 +1,47 @@
-version: '3.8'
-
+# One VM with the static IP registered at Angel One. Two containers share one ledger.
+# The dashboard is published on 127.0.0.1 only: open it through an SSH tunnel
+#   ssh -L 8080:127.0.0.1:8080 user@your-server   then browse http://localhost:8080
 services:
-  postgres:
-    image: postgres:15
-    container_name: axon-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: axon
-      POSTGRES_USER: axon
-      POSTGRES_PASSWORD: axon_password
-    volumes:
-      - axon-postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - axon-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U axon -d axon"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  scheduler:
+  trader:
     build: .
-    container_name: axon-scheduler
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
+    env_file: .env
     environment:
-      - AXON_DATABASE_URL=postgresql+psycopg2://axon:axon_password@postgres:5432/axon
-      - ANGEL_ONE_API_KEY=${ANGEL_ONE_API_KEY:-}
-      - ANGEL_ONE_CLIENT_ID=${ANGEL_ONE_CLIENT_ID:-}
-      - ANGEL_ONE_PIN=${ANGEL_ONE_PIN:-}
-      - ANGEL_ONE_TOTP_SECRET=${ANGEL_ONE_TOTP_SECRET:-}
-      - PYTHONUNBUFFERED=1
+      AXON_DB_PATH: /app/data/axon.sqlite3
+      AXON_REPORTS_DIR: /app/reports
     volumes:
-      - ./logs:/app/logs
-    networks:
-      - axon-network
-    command: ["python", "run_trader.py", "--schedule"]
+      - axon-data:/app/data
+      - axon-reports:/app/reports
+    restart: unless-stopped
+    labels:
+      autoheal: "true"
 
   web:
     build: .
-    container_name: axon-web
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
+    command: ["python", "-m", "axon", "web"]
+    env_file: .env
     environment:
-      - AXON_DATABASE_URL=postgresql+psycopg2://axon:axon_password@postgres:5432/axon
-      - ANGEL_ONE_API_KEY=${ANGEL_ONE_API_KEY:-}
-      - ANGEL_ONE_CLIENT_ID=${ANGEL_ONE_CLIENT_ID:-}
-      - ANGEL_ONE_PIN=${ANGEL_ONE_PIN:-}
-      - ANGEL_ONE_TOTP_SECRET=${ANGEL_ONE_TOTP_SECRET:-}
-      - WEB_USERNAME=${WEB_USERNAME:-admin}
-      - WEB_PASSWORD=${WEB_PASSWORD:-changeme}
-      - PYTHONUNBUFFERED=1
-    ports:
-      - "5000:5000"
+      AXON_DB_PATH: /app/data/axon.sqlite3
+      AXON_WEB_HOST: 0.0.0.0          # inside the container; published to localhost only below
     volumes:
-      - ./logs:/app/logs
-    networks:
-      - axon-network
-    command: ["python", "run_web.py", "--host", "0.0.0.0", "--port", "5000"]
+      - axon-data:/app/data
+    ports:
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')"]
+      interval: 1m
+    restart: unless-stopped
 
-  dashboard:
-    build: .
-    container_name: axon-dashboard
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
+  # Docker does not restart unhealthy containers on its own; this restarts the trader
+  # when its health check fails (finding 14: restart within 15 minutes).
+  autoheal:
+    image: willfarrell/autoheal:1.2.0
     environment:
-      - AXON_DATABASE_URL=postgresql+psycopg2://axon:axon_password@postgres:5432/axon
-      - PYTHONUNBUFFERED=1
-    ports:
-      - "8501:8501"
+      AUTOHEAL_CONTAINER_LABEL: autoheal
+      AUTOHEAL_INTERVAL: 60
     volumes:
-      - ./logs:/app/logs
-    networks:
-      - axon-network
-    command: ["streamlit", "run", "dashboard/app.py", "--server.address", "0.0.0.0", "--server.port", "8501", "--server.headless", "true"]
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
 
 volumes:
-  axon-postgres-data:
-    driver: local
-
-networks:
-  axon-network:
-    driver: bridge
+  axon-data:
+  axon-reports:
